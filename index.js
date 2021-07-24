@@ -177,6 +177,56 @@ app.get('/getProducts', (req,res) => {
     })
 })
 
+app.patch('/updateProduct/:id', (req,res) => {
+    const _id = req.params.id;
+    const file = req.files.image;
+    const id = req.body.id;
+    const title = req.body.title;
+    const category = req.body.category;
+    const description = req.body.description;
+    const weight = req.body.weight;
+    const productType = req.body.productType
+    const regularPrice = req.body.regularPrice;
+    const salePrice = req.body.salePrice;
+
+    console.log({
+        _id, id, file ,title, category, description, weight, productType, regularPrice, salePrice
+    })
+
+    const filePath = `${__dirname}/products/${file.name}`;
+
+    file.mv(filePath, err => {
+        if(err){
+            console.log(err)
+            res.status(500).send({ msg: 'file failed to upload'})
+        }
+        const newImg = fs.readFileSync(filePath);
+
+        const encImg = newImg.toString('base64');
+
+        var image = {
+            name: file.name,
+            contentType: file.mimetype,
+            size: file.size,
+            img: Buffer.from(encImg, 'base64')
+        };
+
+        productsCollection.updateOne({_id: ObjectId(_id)},{
+            $set: {id, title, category, description, weight, productType, regularPrice, salePrice, image}
+        })
+        .then( result => {
+            fs.remove(filePath, error => {
+                if(error){
+                    console.log(error);
+                    res.status(500).send({ msg: 'file failed to upload'})
+                }
+                res.send(result.modifiedCount > 0);
+            })
+        })
+        
+    })
+})
+
   console.log('Database Connected Successfully');
  
 });
