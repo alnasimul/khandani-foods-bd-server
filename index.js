@@ -177,6 +177,15 @@ app.get('/getProducts', (req,res) => {
     })
 })
 
+app.get('/getProductById/:id', (req,res) => {
+    const id = req.params.id;
+    //console.log(id);
+    productsCollection.find({ id })
+    .toArray((err,documents) => {
+        res.send(documents[0])
+    })
+})
+
 app.patch('/updateProduct/:id', (req,res) => {
     const _id = req.params.id;
     const file = req.files.image;
@@ -224,6 +233,15 @@ app.patch('/updateProduct/:id', (req,res) => {
             })
         })
         
+    })
+})
+
+app.delete('/deleteProduct/:id', (req,res) => {
+    const id = req.params.id;
+
+    productsCollection.deleteOne({ _id: ObjectId(id)})
+    .then( result => {
+        res.send(result.deletedCount > 0)
     })
 })
 
