@@ -95,6 +95,7 @@ client.connect(err => {
             res.send( result.modifiedCount > 0)
         })
       }
+
       else {
         ordersCollection.updateOne({_id: ObjectId(id)},{
             $set: {orderStatus: status.orderStatus}
@@ -184,6 +185,21 @@ app.get('/getProductById/:id', (req,res) => {
     .toArray((err,documents) => {
         res.send(documents[0])
     })
+})
+
+app.post('/getCartProducts', (req,res) => {
+        const keys = req.body;
+
+        console.log(keys)
+
+        productsCollection.find( {id: {$in: keys }})
+        .toArray((err,documents) => {
+            console.log(documents)
+            res.send(documents)
+        })
+      
+
+        console.log(keys);
 })
 
 app.patch('/updateProduct/:id', (req,res) => {
