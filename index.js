@@ -14,6 +14,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 app.use(express.static('products'));
+app.use(express.static('blogs'));
 app.use(fileUpload());
 
 
@@ -31,6 +32,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 client.connect(err => {
   const ordersCollection = client.db(process.env.DB_NAME).collection("orders");
   const productsCollection = client.db(process.env.DB_NAME).collection("products");
+  const blogsCollection = client.db(process.env.DB_NAME).collection("blogs");
   // perform actions on the collection object
 
   app.post('/addOrder',(req,res) => {
@@ -122,6 +124,9 @@ client.connect(err => {
 
       
   })
+
+  // product related actions //
+
   app.post('/addProduct',(req,res) => {
     const file = req.files.image;
     const id = req.body.id;
@@ -194,8 +199,10 @@ app.post('/getCartProducts', (req,res) => {
 
         productsCollection.find( {id: {$in: keys }})
         .toArray((err,documents) => {
-            console.log(documents)
-            res.send(documents)
+            if(documents.length > 0){
+                console.log(documents)
+                res.send(documents)
+            }
         })
       
 
@@ -259,6 +266,58 @@ app.delete('/deleteProduct/:id', (req,res) => {
     .then( result => {
         res.send(result.deletedCount > 0)
     })
+})
+
+  
+// Blog related actions //
+
+
+app.post('/addBlog',(req,res) => {
+
+    const file = req.files.file;
+    const title = req.body.title;
+    const location = req.body.location;
+    const description = req.body.description;
+    const publish = req.body.publish;
+
+    
+
+    const filePath = `${__dirname}/blogs/${file.name}`;
+
+    file.mv(filePath, err => {
+        if(err){
+            console.log(err)
+            res.status(500).send({ msg: 'file failed to upload'})
+        }
+
+        const newImg = fs.readFileSync(filePath);
+
+        const encImg = newImg.toString('base64');
+
+        var image = {
+            name: file.name,
+            contentType: file.mimetype,
+            size: file.size,
+            img: Buffer.from(encImg, 'base64')
+        };
+
+        console.log({ title, file, location, description, publish, image })
+
+        blogsCollection.insertOne({ title, location, description, image, publish})
+        .then( result => {
+            fs.remove(filePath, error => {
+                if(error){
+                    console.log(error);
+                    res.status(500).send({ msg: 'file failed to upload'})
+                }
+                res.send(result.insertedCount > 0);
+            })
+        } )
+
+
+       // return res.send({ name: file.name , path:`/${file.name}`})
+    })
+
 })
 
   console.log('Database Connected Successfully');
