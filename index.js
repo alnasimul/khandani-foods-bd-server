@@ -320,6 +320,90 @@ app.post('/addBlog',(req,res) => {
 
 })
 
+app.get('/getBlogs',(req, res) => {
+    blogsCollection.find({})
+    .toArray( (err, documents) => {
+        res.send(documents)
+    })
+})
+
+app.patch('/updateBlogPublishStatus/:id',(req,res) => {
+    const id = req.params.id;
+    const publish = req.body;
+
+    blogsCollection.updateOne({ _id: ObjectId(id)},{
+        $set: {publish}
+    })
+    .then(result => {
+        res.send( result.modifiedCount > 0);
+    })
+
+})
+
+app.patch('/updateBlog/:id', (req, res) => {
+    const id = req.params.id;
+    const file = req.files.file;
+    const title = req.body.title;
+    const location = req.body.location;
+    const description = req.body.description;
+
+    const filePath = `${__dirname}/blogs/${file.name}`;
+
+    if(file){
+
+        file.mv(filePath, err => {
+            if(err){
+                console.log(err)
+                res.status(500).send({ msg: 'file failed to upload'})
+            }
+    
+            const newImg = fs.readFileSync(filePath);
+    
+            const encImg = newImg.toString('base64');
+    
+            var image = {
+                    name: file.name,
+                    contentType: file.mimetype,
+                    size: file.size,
+                    img: Buffer.from(encImg, 'base64')
+                };
+            
+    
+           
+    
+            console.log({ title, location, description,  image })
+    
+            blogsCollection.updateOne({_id: ObjectId(id)},{
+                $set: { title, location, description, image}
+            }).then( result => {
+                fs.remove(filePath, error => {
+                    if(error){
+                        console.log(error);
+                        res.status(500).send({ msg: 'file failed to upload'})
+                    }
+                    res.send(result.modifiedCount > 0);
+                })
+            })
+    
+        })
+        
+    }
+    else{
+        blogsCollection.updateOne({ _id: ObjectId(id)},{
+            $set: { title, location, description }
+        })
+        .then( result => {
+            res.send(result.matchedCount > 0 )
+        })
+    }
+   
+
+    console.log({id, file, title, location, description})
+
+})
+
+
+
   console.log('Database Connected Successfully');
  
 });
