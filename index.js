@@ -402,6 +402,14 @@ app.patch('/updateBlog/:id', (req, res) => {
 
 })
 
+app.delete( '/deleteBlog/:id',(req,res) => {
+    const id = req.params.id;
+
+    blogsCollection.deleteOne({_id: ObjectId(id)})
+    .then( result => {
+        res.send(result.deletedCount > 0);
+    })
+})
 
 
   console.log('Database Connected Successfully');
