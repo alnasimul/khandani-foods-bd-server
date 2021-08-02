@@ -5,6 +5,7 @@ const { MongoClient } = require('mongodb');
 const ObjectId = require('mongodb').ObjectID;
 const fileUpload = require('express-fileupload');
 const fs = require('fs-extra');
+const admin = require("firebase-admin");
 require('dotenv').config();
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fpbtl.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`;
@@ -16,6 +17,13 @@ app.use(cors());
 app.use(express.static('products'));
 app.use(express.static('blogs'));
 app.use(fileUpload());
+ 
+const serviceAccount = require('./configs/khandani-foods-bd-firebase-adminsdk-iijl7-1ec7d28021.json');
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+  
 
 
 const port = 4000;
@@ -35,6 +43,39 @@ client.connect(err => {
   const blogsCollection = client.db(process.env.DB_NAME).collection("blogs");
   // perform actions on the collection object
 
+    app.get('/userOrders', (req,res) => {
+        const bearer = req.headers.authorization;
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+            .auth()
+            .verifyIdToken(idToken)
+            .then((decodedToken) => {
+                const tokenEmail = decodedToken.email;
+                const queryEmail = req.query.email;
+
+                console.log({tokenEmail, queryEmail})
+
+                if (tokenEmail === queryEmail) {
+                    ordersCollection.find({ email: queryEmail })
+                    .toArray((err, documents) => {
+                      res.status(200).send(documents);
+                    })
+                }else{
+                  res.status(401).send('401 Unauthorized Access')
+                }
+            })
+            .catch((error) => {
+                res.status(401).send('401 Unauthorized Access')
+            });
+
+        }
+        else{
+            res.status(401).send('401 Unauthorized Access')
+      }
+    })
+
+  // admin-panel 
   app.post('/addOrder',(req,res) => {
       const singleOrder = req.body;
    //   console.log(singleOrder);
