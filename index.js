@@ -279,6 +279,7 @@ app.post('/addBlog',(req,res) => {
     const location = req.body.location;
     const description = req.body.description;
     const publish = req.body.publish;
+    const created = req.body.created;
 
     
 
@@ -303,7 +304,7 @@ app.post('/addBlog',(req,res) => {
 
         console.log({ title, file, location, description, publish, image })
 
-        blogsCollection.insertOne({ title, location, description, image, publish})
+        blogsCollection.insertOne({ title, location, description, image, publish, created})
         .then( result => {
             fs.remove(filePath, error => {
                 if(error){
