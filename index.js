@@ -38,11 +38,94 @@ app.get('/', (req, res) => {
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 client.connect(err => {
-  const ordersCollection = client.db(process.env.DB_NAME).collection("orders");
-  const productsCollection = client.db(process.env.DB_NAME).collection("products");
-  const blogsCollection = client.db(process.env.DB_NAME).collection("blogs");
+
+    const usersCollection = client.db(process.env.DB_NAME).collection("users");
+    const ordersCollection = client.db(process.env.DB_NAME).collection("orders");
+    const productsCollection = client.db(process.env.DB_NAME).collection("products");
+    const blogsCollection = client.db(process.env.DB_NAME).collection("blogs");
   // perform actions on the collection object
 
+  // client site operations
+
+
+    app.post('/addUser', (req,res) => {
+        const bearer = req.headers.authorization;
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+            .auth()
+            .verifyIdToken(idToken)
+            .then((decodedToken) => {
+                const tokenEmail = decodedToken.email;
+                const queryEmail = req.query.email;
+                const userInfo = req.body;
+
+                console.log({tokenEmail, queryEmail})
+                if (tokenEmail === queryEmail) {
+                    usersCollection.insertOne(userInfo)
+                    .then( result => {
+                      res.status(200).send(result.insertedCount > 0);
+                    })
+                }else{
+                  res.status(401).send('401 Unauthorized Access')
+                }
+            })
+        }
+    })
+
+    app.patch('/updateUser/:id',(req,res) => {
+        const bearer = req.headers.authorization;
+        if (bearer && bearer.startsWith('Bearer ')){
+            const idToken = bearer.split(' ')[1];
+            admin
+            .auth()
+            .verifyIdToken(idToken)
+            .then((decodedToken) => {
+                const tokenEmail = decodedToken.email;
+                const queryEmail = req.query.email;
+                const userInfo = req.body;
+                const id = req.params.id;
+
+                console.log({tokenEmail, queryEmail , userInfo} )
+
+                if (tokenEmail === queryEmail) {
+                    usersCollection.updateOne({_id: ObjectId(id)},{
+                        $set : { name: userInfo.name , email: userInfo.email, phone: userInfo.phone, address: userInfo.address, city: userInfo.city }
+                    })
+                    .then( result => {
+                      res.status(200).send(result.insertedCount > 0);
+                    })
+                }else{
+                  res.status(401).send('401 Unauthorized Access')
+                }
+            })
+        }
+
+    })
+    
+    app.get('/getUser',(req,res) => {
+        const bearer = req.headers.authorization;
+        if (bearer && bearer.startsWith('Bearer ')){
+            const idToken = bearer.split(' ')[1];
+            admin
+            .auth()
+            .verifyIdToken(idToken)
+            .then((decodedToken) => {
+                const tokenEmail = decodedToken.email;
+                const queryEmail = req.query.email;
+
+                console.log({tokenEmail, queryEmail})
+                if (tokenEmail === queryEmail) {
+                    usersCollection.find ({email: queryEmail })
+                    .toArray( (err,documents) => {
+                      res.status(200).send(documents[0]);
+                    })
+                }else{
+                  res.status(401).send('401 Unauthorized Access')
+                }
+            })
+        }
+    })
     app.get('/userOrders', (req,res) => {
         const bearer = req.headers.authorization;
         if (bearer && bearer.startsWith('Bearer ')) {
