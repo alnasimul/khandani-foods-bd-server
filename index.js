@@ -8,7 +8,7 @@ const fs = require('fs-extra');
 const admin = require("firebase-admin");
 require('dotenv').config();
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fpbtl.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`;
+
 
 const app = express();
 
@@ -18,7 +18,10 @@ app.use(express.static('products'));
 app.use(express.static('blogs'));
 app.use(fileUpload());
  
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fpbtl.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`;
+
 const serviceAccount = require('./configs/khandani-foods-bd-firebase-adminsdk-iijl7-1ec7d28021.json');
+
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -45,8 +48,9 @@ client.connect(err => {
     const blogsCollection = client.db(process.env.DB_NAME).collection("blogs");
   // perform actions on the collection object
 
-  // client site operations
+ 
 
+     // client site operations
 
     app.post('/addUser', (req,res) => {
         const bearer = req.headers.authorization;
@@ -199,6 +203,10 @@ client.connect(err => {
       const id = req.params.id;
       
       const status = req.body;
+
+      console.log(id)
+
+      console.log(status)
      // console.log(id,status);
 
       //updating payment status
@@ -206,6 +214,20 @@ client.connect(err => {
       if(status.paymentStatus){
         ordersCollection.updateOne({_id: ObjectId(id)},{
             $set: {paymentStatus: status.paymentStatus}
+        })
+        .then((result) => {
+            res.send( result.modifiedCount > 0)
+        })
+        .catch(err => {
+            console.log(err)
+        })
+      }
+
+       //updating confirm order status
+
+     else if(status.confirmStatus){
+        ordersCollection.updateOne({_id: ObjectId(id)},{
+            $set: {confirmStatus: status.confirmStatus}
         })
         .then(result => {
             res.send( result.modifiedCount > 0)
@@ -216,6 +238,17 @@ client.connect(err => {
       else if(status.deliveryStatus){
         ordersCollection.updateOne({_id: ObjectId(id)},{
             $set: {deliveryStatus: status.deliveryStatus}
+        })
+        .then(result => {
+            res.send( result.modifiedCount > 0)
+        })
+      }
+
+      // updating complete order status
+
+        else if(status.completeStatus){
+        ordersCollection.updateOne({_id: ObjectId(id)},{
+            $set: {completeStatus: status.completeStatus}
         })
         .then(result => {
             res.send( result.modifiedCount > 0)
@@ -247,6 +280,14 @@ client.connect(err => {
       })
 
       
+  })
+
+  app.delete('/deleteOrder/:id', (req,res) => {
+      const id = req.params.id;
+      ordersCollection.deleteOne({_id: ObjectId(id)})
+      .then(result => {
+        res.send(result.deletedCount > 0)
+    })
   })
 
   // product related actions //
