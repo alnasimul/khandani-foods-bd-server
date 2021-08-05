@@ -199,6 +199,21 @@ client.connect(err => {
       })
   })
 
+  app.get('/getOrdersByYear/:year',(req,res) => {
+      const year = parseInt(req.params.year);
+
+    //  console.log({year})
+    
+
+      ordersCollection.find({year})
+      .toArray((err,documents) => {
+        // console.log(documents[0])
+          res.send(documents)
+      })
+
+      console.log();
+  })
+
   app.patch('/updateStatus/:id', (req,res) => {
       const id = req.params.id;
       
