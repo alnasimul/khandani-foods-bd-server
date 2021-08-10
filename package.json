@@ -17,7 +17,10 @@
     "express-fileupload": "^1.2.1",
     "firebase-admin": "^9.11.0",
     "fs-extra": "^10.0.0",
-    "mongodb": "^3.6.10"
+    "https": "^1.0.0",
+    "mongodb": "^3.6.10",
+    "sslcommerz": "^1.7.0",
+    "sslcommerz-lts": "^1.0.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.9"
