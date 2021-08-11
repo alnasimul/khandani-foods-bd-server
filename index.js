@@ -182,6 +182,46 @@ client.connect(err => {
         }
     })
 
+    app.get('/getProductById/:id', (req, res) => {
+        const id = req.params.id;
+        //console.log(id);
+        productsCollection.find({ id })
+            .toArray((err, documents) => {
+                res.send(documents[0])
+            })
+    })
+
+    app.post('/getCartProducts', (req, res) => {
+        const keys = req.body;
+
+        console.log(keys)
+
+        productsCollection.find({ id: { $in: keys } })
+            .toArray((err, documents) => {
+                if (documents.length > 0) {
+                    //  console.log(documents)
+                    res.send(documents)
+                }
+            })
+
+
+        console.log(keys);
+    })
+
+    app.get('/homeBlogs',(req,res) => {
+        blogsCollection.find({homeBlog: true})
+        .toArray((err, documents) => {
+            res.send(documents);
+        })
+    })
+
+    app.get('/blogs',(req,res) => {
+        blogsCollection.find({publish: true})
+        .toArray((err, documents) => {
+            res.send(documents);
+        })
+    })
+
     // admin-panel 
     app.post('/addOrder', (req, res) => {
         const singleOrder = req.body;
@@ -384,31 +424,7 @@ client.connect(err => {
             })
     })
 
-    app.get('/getProductById/:id', (req, res) => {
-        const id = req.params.id;
-        //console.log(id);
-        productsCollection.find({ id })
-            .toArray((err, documents) => {
-                res.send(documents[0])
-            })
-    })
-
-    app.post('/getCartProducts', (req, res) => {
-        const keys = req.body;
-
-        console.log(keys)
-
-        productsCollection.find({ id: { $in: keys } })
-            .toArray((err, documents) => {
-                if (documents.length > 0) {
-                    //  console.log(documents)
-                    res.send(documents)
-                }
-            })
-
-
-        console.log(keys);
-    })
+   
 
     app.patch('/updateProduct/:id', (req, res) => {
         const _id = req.params.id;
@@ -533,8 +549,25 @@ client.connect(err => {
         const id = req.params.id;
         const publish = req.body;
 
+        console.log(publish)
+
         blogsCollection.updateOne({ _id: ObjectId(id) }, {
-            $set: { publish }
+            $set:  publish 
+        })
+            .then(result => {
+                res.send(result.modifiedCount > 0);
+            })
+
+    })
+
+    app.patch('/updateBlogPublishHomeStatus/:id', (req, res) => {
+        const id = req.params.id;
+        const homeBlog = req.body;
+
+        console.log(homeBlog)
+
+        blogsCollection.updateOne({ _id: ObjectId(id) }, {
+            $set:  homeBlog 
         })
             .then(result => {
                 res.send(result.modifiedCount > 0);
