@@ -65,6 +65,7 @@ client.connect(err => {
     const ordersCollection = client.db(process.env.DB_NAME).collection("orders");
     const productsCollection = client.db(process.env.DB_NAME).collection("products");
     const blogsCollection = client.db(process.env.DB_NAME).collection("blogs");
+    const membersCollection = client.db(process.env.DB_NAME).collection("members");
     const transactionsCollection = client.db(process.env.DB_NAME).collection("transactions");
     // perform actions on the collection object
 
@@ -647,8 +648,42 @@ client.connect(err => {
     })
 
     app.post('/addMember',(req,res) => {
-        console.log(req.body);
+        const data = req.body;
+        console.log(data)
+        membersCollection.insertOne(data)
+        .then(result => {
+            res.send( result.insertedCount > 0 )
+        })
     })
+
+    app.get('/members', (req,res) => {
+        membersCollection.find({})
+        .toArray(( err, documents ) => {
+            res.send(documents);
+        })
+    })
+
+    app.patch('/updateMember/:id', (req, res) => {
+        const data = req.body;
+
+        membersCollection.updateOne({ _id: ObjectId(id) }, {
+            $set: { name: data.name, email: data.email, phone: data.phone, image: data.image, role: data.role, designation: data.designation, nid: data.nid, address: data.address, city: data.city  }
+        })
+        .then( result => {
+            res.send( result.modifiedCount > 0 );
+        })
+    })
+
+    app.delete('/deleteMember/:id',(req, res) => {
+        const id = req.params.id;
+
+        membersCollection.deleteOne({_id: ObjectId(id)})
+        .then( result => {
+            res.send( result.deletedCount > 0)
+        })
+    })
+
+    
 
     // sslcommerz payment gateway oprerations 
 
