@@ -646,6 +646,10 @@ client.connect(err => {
             })
     })
 
+    app.post('/addMember',(req,res) => {
+        console.log(req.body);
+    })
+
     // sslcommerz payment gateway oprerations 
 
     //sslcommerz init
