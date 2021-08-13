@@ -224,6 +224,15 @@ client.connect(err => {
     })
 
     // admin-panel 
+
+    app.get('/isAdmin/:email',(req,res) => {
+        const email = req.params.email;
+
+        membersCollection.find({role: 'admin', email: email})
+        .toArray(( err, admins ) => {
+            res.send(admins.length > 0)
+        })
+    })
     app.post('/addOrder', (req, res) => {
         const singleOrder = req.body;
         //   console.log(singleOrder);
