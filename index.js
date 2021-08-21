@@ -183,6 +183,21 @@ client.connect(err => {
         }
     })
 
+    app.post('/addOrder', (req, res) => {
+        const singleOrder = req.body;
+        //   console.log(singleOrder);
+        ordersCollection.insertOne(singleOrder)
+            .then(result => {
+                res.send(result.insertedCount > 0)
+            })
+        })
+
+    app.get('/products', (req,res) => {
+        productsCollection.find({})
+        .toArray((err, documents) => {
+            res.send(documents);
+        })
+    } )
     app.get('/getProductById/:id', (req, res) => {
         const id = req.params.id;
         //console.log(id);
@@ -209,290 +224,473 @@ client.connect(err => {
         console.log(keys);
     })
 
-    app.get('/homeBlogs',(req,res) => {
-        blogsCollection.find({homeBlog: true})
-        .toArray((err, documents) => {
-            res.send(documents);
-        })
+    app.get('/homeBlogs', (req, res) => {
+        blogsCollection.find({ homeBlog: true })
+            .toArray((err, documents) => {
+                res.send(documents);
+            })
     })
 
-    app.get('/blogs',(req,res) => {
-        blogsCollection.find({publish: true})
-        .toArray((err, documents) => {
-            res.send(documents);
-        })
+    app.get('/blogs', (req, res) => {
+        blogsCollection.find({ publish: true })
+            .toArray((err, documents) => {
+                res.send(documents);
+            })
     })
 
     // admin-panel 
 
-    app.get('/isAdmin/:email',(req,res) => {
+    app.get('/isAdmin/:email', (req, res) => {
         const email = req.params.email;
 
-        membersCollection.find({role: 'admin', email: email})
-        .toArray(( err, admins ) => {
-            res.send(admins.length > 0)
-        })
-    })
-    app.post('/addOrder', (req, res) => {
-        const singleOrder = req.body;
-        //   console.log(singleOrder);
-        ordersCollection.insertOne(singleOrder)
-            .then(result => {
-                res.send(result.insertedCount > 0)
+        membersCollection.find({ role: 'admin', email: email })
+            .toArray((err, admins) => {
+                res.send(admins.length > 0)
             })
-
     })
-
+ 
     app.post('/trackOrder', (req, res) => {
-        const data = req.body;
-        //  console.log(data);
-        ordersCollection.find(data)
-            .toArray((err, documents) => {
-                res.send(documents);
-                console.log(documents);
-            })
+        const bearer = req.headers.authorization;
+
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const data = req.body;
+                    //  console.log(data);
+
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        ordersCollection.find(data)
+                        .toArray((err, documents) => {
+                            res.send(documents);
+                            console.log(documents);
+                        })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
     })
 
     app.post('/ordersByDate', (req, res) => {
-        const date = req.body;
-        // console.log(date)
-        ordersCollection.find({ created: date.date })
-            .toArray((err, documents) => {
-                res.send(documents)
-            })
+        const bearer = req.headers.authorization;
+
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const date = req.body;
+                    // console.log(date)
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        ordersCollection.find({ created: date.date })
+                            .toArray((err, documents) => {
+                                res.send(documents)
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
     })
 
     app.get('/getOrders', (req, res) => {
-        ordersCollection.find({ orderStatus: 'open' })
-            .toArray((err, documents) => {
-                res.send(documents);
-            })
+        const bearer = req.headers.authorization;
+
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        ordersCollection.find({ orderStatus: 'open' })
+                            .toArray((err, documents) => {
+                                res.send(documents);
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
     })
 
     app.get('/getOrdersByYear/:year', (req, res) => {
-        const year = parseInt(req.params.year);
+        const bearer = req.headers.authorization;
 
-        //  console.log({year})
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const year = parseInt(req.params.year);
 
+                    //  console.log({year})
 
-        ordersCollection.find({ year })
-            .toArray((err, documents) => {
-                // console.log(documents[0])
-                res.send(documents)
-            })
-
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        ordersCollection.find({ year })
+                            .toArray((err, documents) => {
+                                // console.log(documents[0])
+                                res.send(documents)
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
         //
         // console.log();
     })
 
     app.patch('/updateStatus/:id', (req, res) => {
-        const id = req.params.id;
+        const bearer = req.headers.authorization;
 
-        const status = req.body;
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const id = req.params.id;
 
-        //   console.log(id)
+                    const status = req.body;
+                    // console.log(id,status);
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
 
-        //  console.log(status)
-        // console.log(id,status);
+                        //updating payment status
 
-        //updating payment status
+                        if (status.paymentStatus) {
+                            ordersCollection.updateOne({ _id: ObjectId(id) }, {
+                                $set: { paymentStatus: status.paymentStatus }
+                            })
+                                .then((result) => {
+                                    res.send(result.modifiedCount > 0)
+                                })
+                                .catch(err => {
+                                    console.log(err)
+                                })
+                        }
 
-        if (status.paymentStatus) {
-            ordersCollection.updateOne({ _id: ObjectId(id) }, {
-                $set: { paymentStatus: status.paymentStatus }
-            })
-                .then((result) => {
-                    res.send(result.modifiedCount > 0)
-                })
-                .catch(err => {
-                    console.log(err)
-                })
-        }
+                        //updating confirm order status
 
-        //updating confirm order status
+                        else if (status.confirmStatus) {
+                            ordersCollection.updateOne({ _id: ObjectId(id) }, {
+                                $set: { confirmStatus: status.confirmStatus }
+                            })
+                                .then(result => {
+                                    res.send(result.modifiedCount > 0)
+                                })
+                        }
+                        //updating delivery status
 
-        else if (status.confirmStatus) {
-            ordersCollection.updateOne({ _id: ObjectId(id) }, {
-                $set: { confirmStatus: status.confirmStatus }
-            })
-                .then(result => {
-                    res.send(result.modifiedCount > 0)
-                })
-        }
-        //updating delivery status
+                        else if (status.deliveryStatus) {
+                            ordersCollection.updateOne({ _id: ObjectId(id) }, {
+                                $set: { deliveryStatus: status.deliveryStatus }
+                            })
+                                .then(result => {
+                                    res.send(result.modifiedCount > 0)
+                                })
+                        }
 
-        else if (status.deliveryStatus) {
-            ordersCollection.updateOne({ _id: ObjectId(id) }, {
-                $set: { deliveryStatus: status.deliveryStatus }
-            })
-                .then(result => {
-                    res.send(result.modifiedCount > 0)
-                })
-        }
+                        // updating complete order status
 
-        // updating complete order status
+                        else if (status.completeStatus) {
+                            ordersCollection.updateOne({ _id: ObjectId(id) }, {
+                                $set: { completeStatus: status.completeStatus }
+                            })
+                                .then(result => {
+                                    res.send(result.modifiedCount > 0)
+                                })
+                        }
 
-        else if (status.completeStatus) {
-            ordersCollection.updateOne({ _id: ObjectId(id) }, {
-                $set: { completeStatus: status.completeStatus }
-            })
-                .then(result => {
-                    res.send(result.modifiedCount > 0)
-                })
-        }
-
-        else {
-            ordersCollection.updateOne({ _id: ObjectId(id) }, {
-                $set: { orderStatus: status.orderStatus }
-            })
-                .then(result => {
-                    res.send(result.modifiedCount > 0)
+                        else {
+                            ordersCollection.updateOne({ _id: ObjectId(id) }, {
+                                $set: { orderStatus: status.orderStatus }
+                            })
+                                .then(result => {
+                                    res.send(result.modifiedCount > 0)
+                                })
+                        }
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
                 })
         }
 
     })
 
     app.patch('/updateClientInfo/:id', (req, res) => {
-        const id = req.params.id;
-        const clientInfo = req.body;
+        const bearer = req.headers.authorization;
 
-        //console.log(id, clientInfo);
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const id = req.params.id;
+                    const clientInfo = req.body;
 
-        ordersCollection.updateOne({ _id: ObjectId(id) }, {
-            $set: { name: clientInfo.name, phone: clientInfo.phone, email: clientInfo.email, city: clientInfo.city, address: clientInfo.address }
-        })
-            .then(result => {
-                res.send(result.modifiedCount > 0)
-            })
+                    //console.log(id, clientInfo);
 
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        ordersCollection.updateOne({ _id: ObjectId(id) }, {
+                            $set: { name: clientInfo.name, phone: clientInfo.phone, email: clientInfo.email, city: clientInfo.city, address: clientInfo.address }
+                        })
+                            .then(result => {
+                                res.send(result.modifiedCount > 0)
+                            })
 
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
     })
 
     app.delete('/deleteOrder/:id', (req, res) => {
-        const id = req.params.id;
-        ordersCollection.deleteOne({ _id: ObjectId(id) })
-            .then(result => {
-                res.send(result.deletedCount > 0)
-            })
+        const bearer = req.headers.authorization;
+
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const id = req.params.id;
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        ordersCollection.deleteOne({ _id: ObjectId(id) })
+                            .then(result => {
+                                res.send(result.deletedCount > 0)
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
+
+
     })
 
     // product related actions //
 
     app.post('/addProduct', (req, res) => {
-        const file = req.files.image;
-        const id = req.body.id;
-        const title = req.body.title;
-        const category = req.body.category;
-        const description = req.body.description;
-        const weight = req.body.weight;
-        const productType = req.body.productType
-        const regularPrice = req.body.regularPrice;
-        const salePrice = req.body.salePrice;
+        const bearer = req.headers.authorization;
 
-        //  console.log({ file, id, title, category, description, weight, productType, regularPrice, salePrice });
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const file = req.files.image;
+                    const id = req.body.id;
+                    const title = req.body.title;
+                    const category = req.body.category;
+                    const description = req.body.description;
+                    const weight = req.body.weight;
+                    const productType = req.body.productType
+                    const regularPrice = req.body.regularPrice;
+                    const salePrice = req.body.salePrice;
 
-        const filePath = `${__dirname}/products/${file.name}`;
+                    //  console.log({ file, id, title, category, description, weight, productType, regularPrice, salePrice });
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        const filePath = `${__dirname}/products/${file.name}`;
 
-        file.mv(filePath, err => {
-            if (err) {
-                console.log(err);
+                        file.mv(filePath, err => {
+                            if (err) {
+                                console.log(err);
 
-                res.status(500).send({ msg: 'file failed to upload' })
-            }
+                                res.status(500).send({ msg: 'file failed to upload' })
+                            }
 
-            const newImg = fs.readFileSync(filePath);
+                            const newImg = fs.readFileSync(filePath);
 
-            const encImg = newImg.toString('base64');
+                            const encImg = newImg.toString('base64');
 
-            var image = {
-                name: file.name,
-                contentType: file.mimetype,
-                size: file.size,
-                img: Buffer.from(encImg, 'base64')
-            };
+                            var image = {
+                                name: file.name,
+                                contentType: file.mimetype,
+                                size: file.size,
+                                img: Buffer.from(encImg, 'base64')
+                            };
 
-            productsCollection.insertOne({ id, title, category, description, weight, productType, regularPrice, salePrice, image })
-                .then(result => {
-                    fs.remove(filePath, error => {
-                        if (error) {
-                            console.log(error);
-                            res.status(500).send({ msg: 'file failed to upload' })
-                        }
-                        res.send(result.insertedCount > 0);
-                    })
+                            productsCollection.insertOne({ id, title, category, description, weight, productType, regularPrice, salePrice, image })
+                                .then(result => {
+                                    fs.remove(filePath, error => {
+                                        if (error) {
+                                            console.log(error);
+                                            res.status(500).send({ msg: 'file failed to upload' })
+                                        }
+                                        res.send(result.insertedCount > 0);
+                                    })
+                                })
+
+
+                            // return res.send({ name: file.name , path:`/${file.name}`});
+                        })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
                 })
-
-
-            // return res.send({ name: file.name , path:`/${file.name}`});
-        })
+        }
     })
 
     app.get('/getProducts', (req, res) => {
-        productsCollection.find({})
-            .toArray((err, documents) => {
-                res.send(documents);
-            })
+        const bearer = req.headers.authorization;
+
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        productsCollection.find({})
+                            .toArray((err, documents) => {
+                                res.send(documents);
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
     })
 
-   
+
 
     app.patch('/updateProduct/:id', (req, res) => {
-        const _id = req.params.id;
-        const file = req.files.image;
-        const id = req.body.id;
-        const title = req.body.title;
-        const category = req.body.category;
-        const description = req.body.description;
-        const weight = req.body.weight;
-        const productType = req.body.productType
-        const regularPrice = req.body.regularPrice;
-        const salePrice = req.body.salePrice;
+        const bearer = req.headers.authorization;
 
-        console.log({
-            _id, id, file, title, category, description, weight, productType, regularPrice, salePrice
-        })
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const _id = req.params.id;
+                    const file = req.files.image;
+                    const id = req.body.id;
+                    const title = req.body.title;
+                    const category = req.body.category;
+                    const description = req.body.description;
+                    const weight = req.body.weight;
+                    const productType = req.body.productType
+                    const regularPrice = req.body.regularPrice;
+                    const salePrice = req.body.salePrice;
+                    // console.log({
+                    //     _id, id, file, title, category, description, weight, productType, regularPrice, salePrice
+                    // })
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        const filePath = `${__dirname}/products/${file.name}`;
 
-        const filePath = `${__dirname}/products/${file.name}`;
+                        file.mv(filePath, err => {
+                            if (err) {
+                                console.log(err)
+                                res.status(500).send({ msg: 'file failed to upload' })
+                            }
+                            const newImg = fs.readFileSync(filePath);
 
-        file.mv(filePath, err => {
-            if (err) {
-                console.log(err)
-                res.status(500).send({ msg: 'file failed to upload' })
-            }
-            const newImg = fs.readFileSync(filePath);
+                            const encImg = newImg.toString('base64');
 
-            const encImg = newImg.toString('base64');
+                            var image = {
+                                name: file.name,
+                                contentType: file.mimetype,
+                                size: file.size,
+                                img: Buffer.from(encImg, 'base64')
+                            };
 
-            var image = {
-                name: file.name,
-                contentType: file.mimetype,
-                size: file.size,
-                img: Buffer.from(encImg, 'base64')
-            };
+                            productsCollection.updateOne({ _id: ObjectId(_id) }, {
+                                $set: { id, title, category, description, weight, productType, regularPrice, salePrice, image }
+                            })
+                                .then(result => {
+                                    fs.remove(filePath, error => {
+                                        if (error) {
+                                            console.log(error);
+                                            res.status(500).send({ msg: 'file failed to upload' })
+                                        }
+                                        res.send(result.modifiedCount > 0);
+                                    })
+                                })
 
-            productsCollection.updateOne({ _id: ObjectId(_id) }, {
-                $set: { id, title, category, description, weight, productType, regularPrice, salePrice, image }
-            })
-                .then(result => {
-                    fs.remove(filePath, error => {
-                        if (error) {
-                            console.log(error);
-                            res.status(500).send({ msg: 'file failed to upload' })
-                        }
-                        res.send(result.modifiedCount > 0);
-                    })
+                        })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
                 })
-
-        })
+        }
     })
 
     app.delete('/deleteProduct/:id', (req, res) => {
-        const id = req.params.id;
+        const bearer = req.headers.authorization;
 
-        productsCollection.deleteOne({ _id: ObjectId(id) })
-            .then(result => {
-                res.send(result.deletedCount > 0)
-            })
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const id = req.params.id;
+
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        productsCollection.deleteOne({ _id: ObjectId(id) })
+                            .then(result => {
+                                res.send(result.deletedCount > 0)
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
     })
 
 
@@ -501,198 +699,368 @@ client.connect(err => {
 
     app.post('/addBlog', (req, res) => {
 
-        const file = req.files.file;
-        const title = req.body.title;
-        const location = req.body.location;
-        const description = req.body.description;
-        const publish = req.body.publish;
-        const created = req.body.created;
+        const bearer = req.headers.authorization;
+
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const file = req.files.file;
+                    const title = req.body.title;
+                    const location = req.body.location;
+                    const description = req.body.description;
+                    const publish = req.body.publish;
+                    const created = req.body.created;
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+
+                        const filePath = `${__dirname}/blogs/${file.name}`;
+
+                        file.mv(filePath, err => {
+                            if (err) {
+                                console.log(err)
+                                res.status(500).send({ msg: 'file failed to upload' })
+                            }
+
+                            const newImg = fs.readFileSync(filePath);
+
+                            const encImg = newImg.toString('base64');
+
+                            var image = {
+                                name: file.name,
+                                contentType: file.mimetype,
+                                size: file.size,
+                                img: Buffer.from(encImg, 'base64')
+                            };
+
+                            //  console.log({ title, file, location, description, publish, image })
+
+                            blogsCollection.insertOne({ title, location, description, image, publish, created })
+                                .then(result => {
+                                    fs.remove(filePath, error => {
+                                        if (error) {
+                                            console.log(error);
+                                            res.status(500).send({ msg: 'file failed to upload' })
+                                        }
+                                        res.send(result.insertedCount > 0);
+                                    })
+                                })
 
 
-
-        const filePath = `${__dirname}/blogs/${file.name}`;
-
-        file.mv(filePath, err => {
-            if (err) {
-                console.log(err)
-                res.status(500).send({ msg: 'file failed to upload' })
-            }
-
-            const newImg = fs.readFileSync(filePath);
-
-            const encImg = newImg.toString('base64');
-
-            var image = {
-                name: file.name,
-                contentType: file.mimetype,
-                size: file.size,
-                img: Buffer.from(encImg, 'base64')
-            };
-
-            //  console.log({ title, file, location, description, publish, image })
-
-            blogsCollection.insertOne({ title, location, description, image, publish, created })
-                .then(result => {
-                    fs.remove(filePath, error => {
-                        if (error) {
-                            console.log(error);
-                            res.status(500).send({ msg: 'file failed to upload' })
-                        }
-                        res.send(result.insertedCount > 0);
-                    })
+                            // return res.send({ name: file.name , path:`/${file.name}`})
+                        })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
                 })
+        }
 
 
-            // return res.send({ name: file.name , path:`/${file.name}`})
-        })
+
+
+
 
     })
 
     app.get('/getBlogs', (req, res) => {
-        blogsCollection.find({})
-            .toArray((err, documents) => {
-                res.send(documents)
-            })
+        const bearer = req.headers.authorization;
+
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        blogsCollection.find({})
+                            .toArray((err, documents) => {
+                                res.send(documents)
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
     })
 
     app.patch('/updateBlogPublishStatus/:id', (req, res) => {
-        const id = req.params.id;
-        const publish = req.body;
+        const bearer = req.headers.authorization;
 
-        console.log(publish)
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const id = req.params.id;
+                    const publish = req.body;
 
-        blogsCollection.updateOne({ _id: ObjectId(id) }, {
-            $set:  publish 
-        })
-            .then(result => {
-                res.send(result.modifiedCount > 0);
-            })
+                    console.log(publish)
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        blogsCollection.updateOne({ _id: ObjectId(id) }, {
+                            $set: publish
+                        })
+                            .then(result => {
+                                res.send(result.modifiedCount > 0);
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
 
     })
 
     app.patch('/updateBlogPublishHomeStatus/:id', (req, res) => {
-        const id = req.params.id;
-        const homeBlog = req.body;
 
-        console.log(homeBlog)
+        const bearer = req.headers.authorization;
 
-        blogsCollection.updateOne({ _id: ObjectId(id) }, {
-            $set:  homeBlog 
-        })
-            .then(result => {
-                res.send(result.modifiedCount > 0);
-            })
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const id = req.params.id;
+                    const homeBlog = req.body;
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        blogsCollection.updateOne({ _id: ObjectId(id) }, {
+                            $set: homeBlog
+                        })
+                            .then(result => {
+                                res.send(result.modifiedCount > 0);
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
 
     })
 
     app.patch('/updateBlog/:id', (req, res) => {
-        const id = req.params.id;
-        const file = req.files.file;
-        const title = req.body.title;
-        const location = req.body.location;
-        const description = req.body.description;
+        const bearer = req.headers.authorization;
 
-        const filePath = `${__dirname}/blogs/${file.name}`;
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const id = req.params.id;
+                    const file = req.files.file;
+                    const title = req.body.title;
+                    const location = req.body.location;
+                    const description = req.body.description;
 
-        if (file) {
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        const filePath = `${__dirname}/blogs/${file.name}`;
 
-            file.mv(filePath, err => {
-                if (err) {
-                    console.log(err)
-                    res.status(500).send({ msg: 'file failed to upload' })
-                }
+                        if (file) {
 
-                const newImg = fs.readFileSync(filePath);
+                            file.mv(filePath, err => {
+                                if (err) {
+                                    console.log(err)
+                                    res.status(500).send({ msg: 'file failed to upload' })
+                                }
 
-                const encImg = newImg.toString('base64');
+                                const newImg = fs.readFileSync(filePath);
 
-                var image = {
-                    name: file.name,
-                    contentType: file.mimetype,
-                    size: file.size,
-                    img: Buffer.from(encImg, 'base64')
-                };
+                                const encImg = newImg.toString('base64');
 
+                                var image = {
+                                    name: file.name,
+                                    contentType: file.mimetype,
+                                    size: file.size,
+                                    img: Buffer.from(encImg, 'base64')
+                                };
 
+                                blogsCollection.updateOne({ _id: ObjectId(id) }, {
+                                    $set: { title, location, description, image }
+                                }).then(result => {
+                                    fs.remove(filePath, error => {
+                                        if (error) {
+                                            console.log(error);
+                                            res.status(500).send({ msg: 'file failed to upload' })
+                                        }
+                                        res.send(result.modifiedCount > 0);
+                                    })
+                                })
 
+                            })
 
-                //  console.log({ title, location, description, image })
-
-                blogsCollection.updateOne({ _id: ObjectId(id) }, {
-                    $set: { title, location, description, image }
-                }).then(result => {
-                    fs.remove(filePath, error => {
-                        if (error) {
-                            console.log(error);
-                            res.status(500).send({ msg: 'file failed to upload' })
                         }
-                        res.send(result.modifiedCount > 0);
-                    })
-                })
-
-            })
-
-        }
-        else {
-            blogsCollection.updateOne({ _id: ObjectId(id) }, {
-                $set: { title, location, description }
-            })
-                .then(result => {
-                    res.send(result.matchedCount > 0)
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
                 })
         }
-
-
-        // console.log({ id, file, title, location, description })
-
     })
 
     app.delete('/deleteBlog/:id', (req, res) => {
-        const id = req.params.id;
+        const bearer = req.headers.authorization;
 
-        blogsCollection.deleteOne({ _id: ObjectId(id) })
-            .then(result => {
-                res.send(result.deletedCount > 0);
-            })
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const id = req.params.id;
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        blogsCollection.deleteOne({ _id: ObjectId(id) })
+                            .then(result => {
+                                res.send(result.deletedCount > 0);
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
     })
 
-    app.post('/addMember',(req,res) => {
-        const data = req.body;
-        console.log(data)
-        membersCollection.insertOne(data)
-        .then(result => {
-            res.send( result.insertedCount > 0 )
-        })
+    app.post('/addMember', (req, res) => {
+        const bearer = req.headers.authorization;
+
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const data = req.body;
+                    console.log(data)
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        membersCollection.insertOne(data)
+                            .then(result => {
+                                res.send(result.insertedCount > 0)
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
+
     })
 
-    app.get('/members', (req,res) => {
-        membersCollection.find({})
-        .toArray(( err, documents ) => {
-            res.send(documents);
-        })
+    app.get('/members', (req, res) => {
+        const bearer = req.headers.authorization;
+
+        console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        membersCollection.find({})
+                            .toArray((err, documents) => {
+                                console.log(documents)
+                                res.send(documents);
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
+
     })
 
     app.patch('/updateMember/:id', (req, res) => {
         const data = req.body;
 
-        membersCollection.updateOne({ _id: ObjectId(id) }, {
-            $set: { name: data.name, email: data.email, phone: data.phone, image: data.image, role: data.role, designation: data.designation, nid: data.nid, address: data.address, city: data.city  }
-        })
-        .then( result => {
-            res.send( result.modifiedCount > 0 );
-        })
+        const bearer = req.headers.authorization;
+
+        //console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const id = req.params.id;
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        membersCollection.updateOne({ _id: ObjectId(id) }, {
+                            $set: { name: data.name, email: data.email, phone: data.phone, image: data.image, role: data.role, designation: data.designation, nid: data.nid, address: data.address, city: data.city }
+                        })
+                            .then(result => {
+                                res.send(result.modifiedCount > 0);
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
+
     })
 
-    app.delete('/deleteMember/:id',(req, res) => {
-        const id = req.params.id;
+    app.delete('/deleteMember/:id', (req, res) => {
+        const bearer = req.headers.authorization;
 
-        membersCollection.deleteOne({_id: ObjectId(id)})
-        .then( result => {
-            res.send( result.deletedCount > 0)
-        })
+        //console.log(bearer)
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin
+                .auth()
+                .verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    const tokenEmail = decodedToken.email;
+                    const queryEmail = req.query.email;
+                    const id = req.params.id;
+                    console.log({ tokenEmail, queryEmail })
+                    if (tokenEmail === queryEmail) {
+                        membersCollection.deleteOne({ _id: ObjectId(id) })
+                            .then(result => {
+                                res.send(result.deletedCount > 0)
+                            })
+                    } else {
+                        res.status(401).send('401 Unauthorized Access')
+                    }
+                })
+        }
+
+
+
     })
 
-    
+
 
     // sslcommerz payment gateway oprerations 
 
@@ -765,7 +1133,7 @@ client.connect(err => {
     app.post('/ssl-payment-gateway-sandbox/success', (req, res) => {
         const status = req.body.status;
         const tranData = req.body;
-      
+
         if (status === 'VALID') {
             const data = {
                 val_id: req.body.val_id
@@ -775,18 +1143,18 @@ client.connect(err => {
             sslcz.validate(data).then(data => {
                 console.log(data.status)
                 transactionsCollection.insertOne(tranData)
-                .then( result => {
-                    if(result.insertedCount > 0) {
-                        let url = 'http://localhost:3000/orderIsOnWay';
-                        const tran_id = req.body.tran_id.split('#')[1]
-                        res.redirect(`${url}/payment_success?tran_id=${tran_id}&amount=${tranData.amount}`)
-                    }
-                 })
+                    .then(result => {
+                        if (result.insertedCount > 0) {
+                            let url = 'http://localhost:3000/orderIsOnWay';
+                            const tran_id = req.body.tran_id.split('#')[1]
+                            res.redirect(`${url}/payment_success?tran_id=${tran_id}&amount=${tranData.amount}`)
+                        }
+                    })
                 //process the response that got from sslcommerz 
                 // https://developer.sslcommerz.com/doc/v4/#order-validation-api
             });
-          }
-        })
+        }
+    })
 
     app.post('/fail', (req, res) => {
         return res.status(400).json({
